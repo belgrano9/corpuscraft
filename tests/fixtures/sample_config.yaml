@@ -1,0 +1,43 @@
+input:
+  folder: "./data"
+  file_types:
+    - pdf
+    - txt
+    - md
+  recursive: true
+
+processing:
+  chunk_size: 512
+  chunk_overlap: 50
+  ocr_enabled: true
+  extract_tables: true
+  extract_images: false
+
+llm:
+  backend: "ollama"
+  model: "llama3.1:8b"
+  base_url: "http://localhost:11434"
+  temperature: 0.7
+  max_tokens: 2048
+
+generators:
+  - type: "qa"
+    qa:
+      num_examples: 100
+      question_types:
+        - factual
+        - reasoning
+        - comparison
+      difficulty_levels:
+        - easy
+        - medium
+        - hard
+      min_answer_length: 5
+      max_answer_length: 100
+
+output:
+  format: "jsonl"
+  output_dir: "./outputs"
+  split_ratio: [0.8, 0.1, 0.1]
+  shuffle: true
+  seed: 42
