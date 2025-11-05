@@ -1,0 +1,35 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+#/data/  # Uncomment to ignore input data files
+*.log
+.cache/
+
+# Outputs
+outputs/
+datasets/
+*.jsonl
+*.csv
+!examples/*.jsonl  # Keep example files

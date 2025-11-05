@@ -1,0 +1,19 @@
+[project]
+name = "corpuscraft"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Belg PC", email = "tomsomoza911@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "docling>=2.60.1",
+]
+
+[project.scripts]
+corpuscraft = "corpuscraft:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
