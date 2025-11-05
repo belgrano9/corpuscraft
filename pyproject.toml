@@ -84,9 +84,10 @@ all = [
 corpuscraft = "corpuscraft.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/corpuscraft"
-Repository = "https://github.com/yourusername/corpuscraft"
-Issues = "https://github.com/yourusername/corpuscraft/issues"
+Homepage = "https://github.com/belgrano9/corpuscraft"
+Repository = "https://github.com/belgrano9/corpuscraft"
+Issues = "https://github.com/belgrano9/corpuscraft/issues"
+Documentation = "https://github.com/belgrano9/corpuscraft#readme"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,13 @@
+# Include important files in the distribution
+include README.md
+include LICENSE
+include PLAN.md
+include pyproject.toml
+
+# Include example configurations
+recursive-include examples *.yaml *.yml
+
+# Exclude unnecessary files
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store

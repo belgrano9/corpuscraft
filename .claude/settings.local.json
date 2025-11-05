@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: CorpusCraft project structure\n\nSet up basic project structure for CorpusCraft, a local-first synthetic dataset generation pipeline. Includes:\n- Project configuration (pyproject.toml) with docling dependency\n- Python 3.12 environment configuration\n- Comprehensive .gitignore\n- PLAN.md documenting the vision and architecture\n- Basic package structure (src/corpuscraft)\n- Data folder for input documents\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: CorpusCraft project structure\n\nSet up basic project structure for CorpusCraft, a local-first synthetic dataset generation pipeline. Includes:\n- Project configuration (pyproject.toml) with docling dependency\n- Python 3.12 environment configuration\n- Comprehensive .gitignore\n- PLAN.md documenting the vision and architecture\n- Basic package structure (src/corpuscraft)\n- Data folder for input documents\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(tree:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
