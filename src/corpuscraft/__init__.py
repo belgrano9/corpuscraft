@@ -1,17 +1,10 @@
-"""CorpusCraft: Transform your documents into training datasets."""
+"""
+CorpusCraft: Local-first synthetic dataset generation pipeline.
+
+A tool for creating high-quality synthetic datasets from your documents
+using local LLMs and enterprise-grade document parsing.
+"""
 
 __version__ = "0.1.0"
 
-from corpuscraft.generators import BaseGenerator, QAGenerator
-from corpuscraft.llm import BaseLLM, OllamaLLM
-from corpuscraft.output import JSONLWriter
-from corpuscraft.parsers import DoclingParser
-
-__all__ = [
-    "BaseGenerator",
-    "QAGenerator",
-    "BaseLLM",
-    "OllamaLLM",
-    "JSONLWriter",
-    "DoclingParser",
-]
+__all__ = ["__version__"]
