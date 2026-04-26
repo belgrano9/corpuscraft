@@ -18,6 +18,9 @@ def create_parser(config: ParserConfig) -> BaseParser:
         case PipelineType.yolo:
             from corpuscraft.parsers.yolo import YoloParser
             return YoloParser(config)
+        case PipelineType.mineru:
+            from corpuscraft.parsers.mineru import MineruParser
+            return MineruParser(config)
         case _:
             from corpuscraft.parsers.standard import StandardParser
             return StandardParser(config)

@@ -9,7 +9,17 @@
       "Bash(git reset:*)",
       "Bash(git rm:*)",
       "Bash(git checkout *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "mcp__claude_ai_Hugging_Face__hub_repo_search",
+      "mcp__claude_ai_Hugging_Face__hub_repo_details",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:mineru.readthedocs.io)",
+      "Bash(uv run *)",
+      "Bash(pip show *)",
+      "WebFetch(domain:opendatalab.github.io)",
+      "Bash(gh api *)",
+      "Bash(python -c \"import inspect, mineru.backend.pipeline.pipeline_middle_json_mkcontent as m; print\\(inspect.getsource\\(m.make_blocks_to_markdown\\)\\)\")",
+      "Bash(grep -v \"^$\")"
     ],
     "deny": [],
     "ask": []

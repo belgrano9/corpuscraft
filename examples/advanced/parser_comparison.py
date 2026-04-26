@@ -1,11 +1,12 @@
 """
-Parser Comparison: Docling vs DocLayout-YOLO
+Parser Comparison: Docling vs DocLayout-YOLO vs MinerU
 
-For each page, renders a side-by-side PNG showing Tables and Figures
+For each page, renders a three-panel PNG showing Tables and Figures
 detected by each pipeline on the same rendered page image.
 
-Left panel  — Docling        (Table: blue,   Figure: green)
-Right panel — DocLayout-YOLO (Table: red,    Picture: orange)
+Left   — Docling        (Table: blue,   Figure: green)
+Centre — DocLayout-YOLO (Table: red,    Picture: orange)
+Right  — MinerU         (Table: purple, Image: cyan)
 
 Usage:
     uv run examples/advanced/parser_comparison.py
@@ -26,6 +27,7 @@ from docling_core.types.doc import PictureItem, TableItem
 from PIL import Image, ImageDraw
 
 _YOLO_RENDER_SCALE = 150 / 72.0  # matches YoloParser exactly
+_MINERU_SCALE = 200 / 72.0       # MinerU renders at 200 DPI
 
 SOURCE_FILE = Path("data") / "raw" / "bulletin-de-paie-du-011025-au-311025.pdf"
 OUTPUT_DIR = Path("scratch") / "comparison"
@@ -39,8 +41,10 @@ _YOLO_NAMES: dict[int, str] = {
     7: "Section-header", 8: "Table", 9: "Text", 10: "Title",
 }
 
-_DOCLING_COLORS = {"Table": (30, 100, 255), "Figure": (30, 200, 80)}
-_YOLO_COLORS    = {"Table": (220, 50, 50),  "Picture": (255, 140, 0)}
+_DOCLING_COLORS  = {"Table": (30, 100, 255),   "Figure":  (30, 200, 80)}
+_YOLO_COLORS     = {"Table": (220, 50, 50),    "Picture": (255, 140, 0)}
+_MINERU_COLORS   = {"table": (140, 30, 220),   "image":   (0, 200, 220),
+                    "chart": (0, 180, 120)}
 
 _log = logging.getLogger(__name__)
 
@@ -63,12 +67,14 @@ def _draw_panel(base: Image.Image, boxes: list[dict], title: str) -> Image.Image
     return panel
 
 
-def _side_by_side(left: Image.Image, right: Image.Image) -> Image.Image:
-    gap = 4
-    h = max(left.height, right.height)
-    canvas = Image.new("RGB", (left.width + gap + right.width, h), (180, 180, 180))
-    canvas.paste(left, (0, 0))
-    canvas.paste(right, (left.width + gap, 0))
+def _hstack(*panels: Image.Image, gap: int = 4) -> Image.Image:
+    h = max(p.height for p in panels)
+    w = sum(p.width for p in panels) + gap * (len(panels) - 1)
+    canvas = Image.new("RGB", (w, h), (180, 180, 180))
+    x = 0
+    for p in panels:
+        canvas.paste(p, (x, 0))
+        x += p.width + gap
     return canvas
 
 
@@ -80,6 +86,12 @@ def main() -> None:
         from huggingface_hub import hf_hub_download, list_repo_files
     except ImportError:
         raise ImportError("Install yolo extras: uv add 'corpuscraft[yolo]'")
+
+    try:
+        from mineru.backend.pipeline.pipeline_analyze import doc_analyze_streaming
+        from mineru.utils.enum_class import BlockType
+    except ImportError:
+        raise ImportError("Install mineru extras: uv pip install 'mineru[pipeline]'")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -105,8 +117,8 @@ def main() -> None:
         for prov in element.prov:
             pno = prov.page_no
             pil = doc.pages[pno].image.pil_image
-            ph_pts = pil.height / IMAGE_SCALE  # page height in PDF points
-            bx = prov.bbox                     # PDF coords: origin bottom-left
+            ph_pts = pil.height / IMAGE_SCALE
+            bx = prov.bbox
             docling_boxes.setdefault(pno, []).append({
                 "label": label, "color": color,
                 "x1": bx.l * IMAGE_SCALE,
@@ -118,7 +130,7 @@ def main() -> None:
     n_docling = sum(len(v) for v in docling_boxes.values())
     _log.info(f"  Docling: {n_docling} detection(s)")
 
-    # ── YOLO — render with pypdfium2 exactly as YoloParser does ─────────────
+    # ── YOLO ─────────────────────────────────────────────────────────────────
     _log.info("Loading DocLayout-YOLO ...")
     pt = next(f for f in list_repo_files(YOLO_MODEL) if f.endswith(".pt"))
     model = YOLOv10(str(hf_hub_download(repo_id=YOLO_MODEL, filename=pt)))
@@ -128,7 +140,7 @@ def main() -> None:
     yolo_images: dict[int, Image.Image] = {}
 
     for idx in range(len(pdf_doc)):
-        pno = idx + 1  # 1-based to match docling page numbering
+        pno = idx + 1
         pil = pdf_doc[idx].render(scale=_YOLO_RENDER_SCALE).to_pil().convert("RGB")
         yolo_images[pno] = pil
 
@@ -149,7 +161,6 @@ def main() -> None:
             elif lbl == "Caption":
                 page_captions.append(box)
 
-        # Merge each Caption into the nearest Table/Picture by center distance
         for cap in page_captions:
             if not page_elements:
                 break
@@ -167,14 +178,64 @@ def main() -> None:
     n_yolo = sum(len(v) for v in yolo_boxes.values())
     _log.info(f"  YOLO: {n_yolo} detection(s)")
 
+    # ── MinerU ───────────────────────────────────────────────────────────────
+    # MinerU bboxes are in PDF points with top-left origin.
+    # Multiply by IMAGE_SCALE to align with Docling's rendered page images.
+    _log.info("Running MinerU ...")
+
+    _MINERU_TYPES = {"table", "image", "chart"}
+    mineru_boxes: dict[int, list[dict]] = {}
+
+    class _NullWriter:
+        def write(self, path: str, data: bytes) -> None:
+            pass
+
+    def on_doc_ready(doc_index: int, model_list: list, middle_json: dict, ocr_enable: bool) -> None:
+        for page in middle_json.get("pdf_info", []):
+            pno = page.get("page_idx", 0) + 1
+            for block in page.get("para_blocks", []):
+                btype = block.get("type", "")
+                if btype not in _MINERU_TYPES:
+                    continue
+                bbox = block.get("bbox")
+                if not bbox:
+                    continue
+                x1, y1, x2, y2 = bbox
+                color = _MINERU_COLORS.get(btype, (200, 200, 200))
+                mineru_boxes.setdefault(pno, []).append({
+                    "label": btype,
+                    "color": color,
+                    "x1": x1 * IMAGE_SCALE,
+                    "y1": y1 * IMAGE_SCALE,
+                    "x2": x2 * IMAGE_SCALE,
+                    "y2": y2 * IMAGE_SCALE,
+                })
+
+    pdf_bytes = SOURCE_FILE.read_bytes()
+    doc_analyze_streaming(
+        pdf_bytes_list=[pdf_bytes],
+        image_writer_list=[_NullWriter()],
+        lang_list=[""],
+        on_doc_ready=on_doc_ready,
+        parse_method="auto",
+        formula_enable=True,
+        table_enable=True,
+    )
+
+    n_mineru = sum(len(v) for v in mineru_boxes.values())
+    _log.info(f"  MinerU: {n_mineru} detection(s)")
+
     # ── Render ───────────────────────────────────────────────────────────────
     _log.info("Rendering comparison pages ...")
     for pno, page in doc.pages.items():
         docling_base = page.image.pil_image
-        yolo_base = yolo_images.get(pno, docling_base)
-        left  = _draw_panel(docling_base, docling_boxes.get(pno, []), f"Docling — page {pno}")
-        right = _draw_panel(yolo_base,    yolo_boxes.get(pno, []),    f"DocLayout-YOLO — page {pno}")
-        out = _side_by_side(left, right)
+        yolo_base    = yolo_images.get(pno, docling_base)
+
+        left   = _draw_panel(docling_base, docling_boxes.get(pno, []),  f"Docling — page {pno}")
+        centre = _draw_panel(yolo_base,    yolo_boxes.get(pno, []),     f"DocLayout-YOLO — page {pno}")
+        right  = _draw_panel(docling_base, mineru_boxes.get(pno, []),   f"MinerU — page {pno}")
+
+        out  = _hstack(left, centre, right)
         path = OUTPUT_DIR / f"page-{pno:03d}.png"
         out.save(path)
         _log.info(f"  {path}")

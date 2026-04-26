@@ -69,6 +69,11 @@ yolo = [
     "pdfplumber>=0.11.0",
 ]
 
+# MinerU pipeline parser (multi-column, formulas, 109-language OCR)
+mineru = [
+    "mineru[pipeline]",
+]
+
 # Development tools
 dev = [
     "pytest>=7.4.0",
@@ -80,7 +85,7 @@ dev = [
 
 # All optional dependencies
 all = [
-    "corpuscraft[transformers,vllm,cloud,quality,ui,yolo]",
+    "corpuscraft[transformers,vllm,cloud,quality,ui,yolo,mineru]",
 ]
 
 [project.scripts]

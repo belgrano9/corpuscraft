@@ -13,6 +13,7 @@ class PipelineType(str, Enum):
     vlm = "vlm"
     ocr = "ocr"
     yolo = "yolo"
+    mineru = "mineru"
 
 
 class ParserConfig(BaseModel):
