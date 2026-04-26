@@ -86,6 +86,10 @@ Repository = "https://github.com/belgrano9/corpuscraft"
 Issues = "https://github.com/belgrano9/corpuscraft/issues"
 Documentation = "https://github.com/belgrano9/corpuscraft#readme"
 
+[tool.uv]
+# Use PyTorch CUDA index as additional source
+extra-index-url = ["https://download.pytorch.org/whl/cu124"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

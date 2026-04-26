@@ -33,3 +33,6 @@ datasets/
 *.jsonl
 *.csv
 !examples/*.jsonl  # Keep example files
+
+
+*.pdf
