@@ -10,7 +10,8 @@
 ## Features
 
 - **Local-first**: No API costs, no data leaving your machine (Ollama backend)
-- **Multiple parsers**: Docling (standard/GPU), OCR, VLM, and DocLayout-YOLO for layout-aware extraction
+- **Multiple parsers**: Docling (standard/GPU), OCR, VLM, DocLayout-YOLO, MinerU, PyMuPDF4LLM, and pdfplumber for versatile extraction
+- **Consensus mode**: Ensemble processing that runs multiple parsers in parallel and merges outputs by bbox agreement
 - **Flexible LLM backends**: Ollama, OpenAI, Anthropic
 - **JSONL output** with configurable train/val/test splits
 
@@ -59,6 +60,10 @@ outputs/
 | `ocr` | Docling + RapidOCR | Scanned / image PDFs |
 | `vlm` | Ollama vision LLM | Complex or ambiguous layouts |
 | `yolo` | DocLayout-YOLO + pdfplumber | Fast, layout-aware text extraction |
+| `mineru` | MinerU Pipeline | Multi-column, math formulas, 109-language OCR |
+| `consensus` | Ensemble (Docling+YOLO+MinerU) | High-accuracy validation via bounding box agreement |
+| `pymupdf` | PyMuPDF4LLM | Extremely fast, high-quality Markdown conversion |
+| `pdfplumber`| pdfplumber | Lightweight text and basic table extraction |
 
 Set `pipeline` in your config or pass `--pipeline yolo` on the CLI.
 
@@ -71,7 +76,7 @@ The YOLO parser uses [`juliozhao/DocLayout-YOLO-DocLayNet-Docsynth300K_pretraine
 input_dir: ./data
 
 parser:
-  pipeline: standard          # standard | gpu | ocr | vlm | yolo
+  pipeline: standard          # standard | gpu | ocr | vlm | yolo | mineru | consensus | pymupdf | pdfplumber
   yolo_confidence: 0.2
 
 llm:
@@ -96,6 +101,10 @@ exporter:
 src/corpuscraft/
   parsers/
     base.py           # BaseParser ABC
+    consensus.py      # Multi-parser ensembling
+    mineru.py         # MinerU pipeline
+    pdfplumber_parser.py # pdfplumber basic extraction
+    pymupdf_parser.py # pymupdf4llm fast markdown
     standard.py       # Docling CPU/GPU
     ocr.py            # Docling + RapidOCR
     vlm.py            # Ollama VLM
@@ -123,6 +132,8 @@ uv run examples/advanced/parser_comparison.py
 |--------|-------------|
 | `basic/simple_processor.py` | Basic Docling conversion |
 | `basic/simple_processor_gpu.py` | GPU-accelerated Docling |
+| `basic/pymupdf_example.py` | Fast PyMuPDF4LLM markdown conversion |
+| `basic/pdfplumber_example.py` | Native pdfplumber layout extraction |
 | `ocr/force_ocr.py` | Force OCR on a PDF |
 | `ocr/translation_ocr.py` | OCR with translation |
 | `vlm/test_vlm.py` | VLM processing via Ollama |

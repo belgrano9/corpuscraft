@@ -35,6 +35,9 @@ dependencies = [
     # Text processing
     "langchain-text-splitters>=0.2.0",
     "loguru>=0.7.3",
+    "pymupdf4llm>=1.27.2.3",
+    "pymupdf>=1.27.2.3",
+    "pdfplumber>=0.11.9",
 ]
 
 [project.optional-dependencies]

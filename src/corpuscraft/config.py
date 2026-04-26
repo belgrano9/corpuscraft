@@ -15,6 +15,8 @@ class PipelineType(str, Enum):
     yolo = "yolo"
     mineru = "mineru"
     consensus = "consensus"
+    pymupdf = "pymupdf"
+    pdfplumber = "pdfplumber"
 
 
 class ParserConfig(BaseModel):

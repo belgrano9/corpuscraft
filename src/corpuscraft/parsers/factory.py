@@ -24,6 +24,12 @@ def create_parser(config: ParserConfig) -> BaseParser:
         case PipelineType.consensus:
             from corpuscraft.parsers.consensus import ConsensusParser
             return ConsensusParser(config)
+        case PipelineType.pymupdf:
+            from corpuscraft.parsers.pymupdf_parser import PyMuPDFParser
+            return PyMuPDFParser(config)
+        case PipelineType.pdfplumber:
+            from corpuscraft.parsers.pdfplumber_parser import PdfPlumberParser
+            return PdfPlumberParser(config)
         case _:
             from corpuscraft.parsers.standard import StandardParser
             return StandardParser(config)
