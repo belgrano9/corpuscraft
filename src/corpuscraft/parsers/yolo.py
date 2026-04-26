@@ -65,7 +65,7 @@ class YoloParser:
         from doclayout_yolo import YOLOv10
 
         logger.info(f"Loading DocLayout-YOLO model: {yolo_model}")
-        self._model = YOLOv10(yolo_model)
+        self._model = YOLOv10.from_pretrained(yolo_model)
         self._conf = yolo_confidence
         self._device = device
 
