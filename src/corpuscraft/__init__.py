@@ -1,10 +1,12 @@
-"""
-CorpusCraft: Local-first synthetic dataset generation pipeline.
+from corpuscraft.config import CorpusCraftConfig, load_config, save_default_config
+from corpuscraft.models import ParsedDocument, QAExample
+from corpuscraft.parsers import create_parser
 
-A tool for creating high-quality synthetic datasets from your documents
-using local LLMs and enterprise-grade document parsing.
-"""
-
-__version__ = "0.1.0"
-
-__all__ = ["__version__"]
+__all__ = [
+    "CorpusCraftConfig",
+    "load_config",
+    "save_default_config",
+    "ParsedDocument",
+    "QAExample",
+    "create_parser",
+]

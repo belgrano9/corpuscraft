@@ -63,6 +63,12 @@ ui = [
     "gradio>=4.0.0",
 ]
 
+# DocLayout-YOLO layout-aware PDF parser
+yolo = [
+    "doclayout-yolo>=0.0.4",
+    "pdfplumber>=0.11.0",
+]
+
 # Development tools
 dev = [
     "pytest>=7.4.0",
@@ -74,7 +80,7 @@ dev = [
 
 # All optional dependencies
 all = [
-    "corpuscraft[transformers,vllm,cloud,quality,ui]",
+    "corpuscraft[transformers,vllm,cloud,quality,ui,yolo]",
 ]
 
 [project.scripts]
@@ -85,6 +91,10 @@ Homepage = "https://github.com/belgrano9/corpuscraft"
 Repository = "https://github.com/belgrano9/corpuscraft"
 Issues = "https://github.com/belgrano9/corpuscraft/issues"
 Documentation = "https://github.com/belgrano9/corpuscraft#readme"
+
+[tool.uv]
+# Use PyTorch CUDA index as additional source
+extra-index-url = ["https://download.pytorch.org/whl/cu124"]
 
 [build-system]
 requires = ["hatchling"]

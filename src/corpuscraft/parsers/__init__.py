@@ -1,7 +1,4 @@
-"""
-Document parsers for CorpusCraft.
-"""
+from corpuscraft.parsers.base import BaseParser
+from corpuscraft.parsers.factory import create_parser
 
-from corpuscraft.parsers.docling_parser import DoclingParser
-
-__all__ = ["DoclingParser"]
+__all__ = ["BaseParser", "create_parser"]

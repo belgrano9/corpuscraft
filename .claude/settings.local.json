@@ -7,7 +7,9 @@
       "Bash(tree:*)",
       "Bash(git push:*)",
       "Bash(git reset:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)"
     ],
     "deny": [],
     "ask": []
