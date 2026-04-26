@@ -19,6 +19,10 @@ uv run -m corpuscraft --help
 src/corpuscraft/
   parsers/
     base.py          # BaseParser ABC — parse_file / parse_folder
+    consensus.py     # Ensemble parser (Docling+YOLO+MinerU)
+    mineru.py        # MinerU pipeline (math, multi-column, OCR)
+    pdfplumber_parser.py # Lightweight pdfplumber extraction
+    pymupdf_parser.py    # PyMuPDF4LLM for fast markdown conversion
     standard.py      # Docling (CPU) — default pipeline
     ocr.py           # Docling + RapidOCR — for scanned PDFs
     vlm.py           # Ollama VLM backend (granite-docling)
@@ -43,6 +47,10 @@ src/corpuscraft/
 | `ocr` | `pipeline: ocr` | Scanned / image-only PDFs |
 | `vlm` | `pipeline: vlm` | Complex layouts via vision LLM |
 | `yolo` | `pipeline: yolo` | Layout-aware extraction, fastest |
+| `mineru` | `pipeline: mineru` | Multi-column, math formulas, dense OCR |
+| `consensus`| `pipeline: consensus`| High accuracy merging via bbox intersection |
+| `pymupdf`  | `pipeline: pymupdf` | Extremely fast high-quality Markdown conversion |
+| `pdfplumber`| `pipeline: pdfplumber` | Lightweight raw text and basic tables |
 
 ## YOLO parser notes
 
@@ -64,7 +72,11 @@ examples/
   advanced/
     figure_export.py        # Docling: extract page/table/figure images
     parser_comparison.py    # Side-by-side Docling vs YOLO detection overlay
+    simple_consensus.py     # Runs multiple parsers and merges outputs
     simple_yolo.py          # Minimal YOLO test on a single image or PDF page
+  basic/
+    pdfplumber_example.py   # Native pdfplumber layout extraction
+    pymupdf_example.py      # Fast PyMuPDF4LLM markdown conversion
 ```
 
 `parser_comparison.py` outputs per-page PNGs to `scratch/comparison/`. The `scratch/` directory is gitignored.
