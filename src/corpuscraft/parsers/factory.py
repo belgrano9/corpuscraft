@@ -21,6 +21,9 @@ def create_parser(config: ParserConfig) -> BaseParser:
         case PipelineType.mineru:
             from corpuscraft.parsers.mineru import MineruParser
             return MineruParser(config)
+        case PipelineType.consensus:
+            from corpuscraft.parsers.consensus import ConsensusParser
+            return ConsensusParser(config)
         case _:
             from corpuscraft.parsers.standard import StandardParser
             return StandardParser(config)

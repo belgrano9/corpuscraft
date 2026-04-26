@@ -74,6 +74,11 @@ mineru = [
     "mineru[pipeline]",
 ]
 
+# Consensus parser — runs Docling + YOLO + MinerU in parallel, validates by bbox agreement
+consensus = [
+    "corpuscraft[yolo,mineru]",
+]
+
 # Development tools
 dev = [
     "pytest>=7.4.0",

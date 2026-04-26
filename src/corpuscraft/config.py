@@ -14,6 +14,7 @@ class PipelineType(str, Enum):
     ocr = "ocr"
     yolo = "yolo"
     mineru = "mineru"
+    consensus = "consensus"
 
 
 class ParserConfig(BaseModel):
@@ -25,6 +26,8 @@ class ParserConfig(BaseModel):
     image_scale: float = 2.0
     yolo_model: str = "juliozhao/DocLayout-YOLO-DocLayNet-Docsynth300K_pretrained"
     yolo_confidence: float = 0.2
+    consensus_iom: float = 0.5
+    consensus_min_votes: int = 1
 
 
 class LLMConfig(BaseModel):
