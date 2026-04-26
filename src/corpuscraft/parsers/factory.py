@@ -15,6 +15,9 @@ def create_parser(config: ParserConfig) -> BaseParser:
         case PipelineType.gpu:
             from corpuscraft.parsers.standard import StandardParser
             return StandardParser(config, use_gpu=True)
+        case PipelineType.yolo:
+            from corpuscraft.parsers.yolo import YoloParser
+            return YoloParser(config)
         case _:
             from corpuscraft.parsers.standard import StandardParser
             return StandardParser(config)
