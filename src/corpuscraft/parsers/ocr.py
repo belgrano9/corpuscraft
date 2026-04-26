@@ -11,13 +11,25 @@ from corpuscraft.models import ParsedDocument
 from corpuscraft.parsers.base import BaseParser
 
 
+# EasyOCR uses 2-letter codes; Tesseract uses 3-letter codes.
+_TESSERACT_TO_EASYOCR: dict[str, str] = {
+    "eng": "en", "fra": "fr", "deu": "de", "spa": "es",
+    "ita": "it", "por": "pt", "rus": "ru", "ara": "ar",
+    "jpn": "ja", "kor": "ko", "chi": "ch_sim",
+}
+
+
+def _to_easyocr_langs(languages: list[str]) -> list[str]:
+    return [_TESSERACT_TO_EASYOCR.get(lang, lang) for lang in languages]
+
+
 def _build_ocr_options(engine: str, languages: list[str]) -> object:
     if engine == "tesseract":
         from docling.datamodel.pipeline_options import TesseractCliOcrOptions
         return TesseractCliOcrOptions(force_full_page_ocr=True, lang=languages)
     if engine == "easyocr":
         from docling.datamodel.pipeline_options import EasyOcrOptions
-        return EasyOcrOptions(force_full_page_ocr=True, lang=languages)
+        return EasyOcrOptions(force_full_page_ocr=True, lang=_to_easyocr_langs(languages))
     # default: rapidocr
     from docling.datamodel.pipeline_options import RapidOcrOptions
     return RapidOcrOptions(force_full_page_ocr=True)

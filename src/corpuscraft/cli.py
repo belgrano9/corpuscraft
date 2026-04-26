@@ -5,7 +5,6 @@ from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 app = typer.Typer(
@@ -13,7 +12,7 @@ app = typer.Typer(
     help="Transform documents into ML training datasets.",
     no_args_is_help=True,
 )
-console = Console()
+console = Console(highlight=False, legacy_windows=False)
 
 
 @app.command()
@@ -30,7 +29,7 @@ def init(
         raise typer.Exit(1)
 
     save_default_config(config_file, input_dir, output_dir)
-    console.print(f"[green]✓[/] Created config: [bold]{config_file}[/]")
+    console.print(f"[green]OK[/] Created config: [bold]{config_file}[/]")
     console.print()
     console.print("Next steps:")
     console.print(f"  1. Place documents in [bold]{input_dir}[/]")
@@ -65,14 +64,12 @@ def parse(
 
     parser = create_parser(cfg.parser)
 
-    with Progress(SpinnerColumn(), TextColumn("{task.description}"), console=console) as progress:
-        task = progress.add_task(f"Scanning {source} ...", total=None)
-        from corpuscraft.parsers.base import SUPPORTED_EXTENSIONS
-        files = [
-            p for p in source.rglob("*")
-            if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS
-        ]
-        progress.update(task, description=f"Found {len(files)} document(s)")
+    from corpuscraft.parsers.base import SUPPORTED_EXTENSIONS
+    files = [
+        p for p in source.rglob("*")
+        if p.is_file() and p.suffix.lower() in SUPPORTED_EXTENSIONS
+    ]
+    console.print(f"Found {len(files)} document(s) in {source}")
 
     if not files:
         console.print(f"[yellow]No supported documents found in {source}[/]")
@@ -89,7 +86,7 @@ def parse(
             table.add_row(path.name, f"[red]FAILED[/]", str(e))
 
     console.print(table)
-    console.print(f"\n[green]✓[/] Parsed files written to [bold]{out_dir}[/]")
+    console.print(f"\n[green]OK[/] Parsed files written to [bold]{out_dir}[/]")
 
 
 @app.command()
@@ -130,9 +127,9 @@ def generate(
     for path in sorted(files):
         try:
             documents.append(parser.parse_file(path))
-            console.print(f"  [green]✓[/] {path.name}")
+            console.print(f"  [green]OK[/] {path.name}")
         except Exception as e:
-            console.print(f"  [red]✗[/] {path.name}: {e}")
+            console.print(f"  [red]FAIL[/] {path.name}: {e}")
 
     if not documents:
         console.print("[red]No documents parsed successfully.[/]")
@@ -151,7 +148,7 @@ def generate(
         for doc in documents:
             examples = generator.generate(doc)
             all_examples.extend(examples)
-            console.print(f"  [green]✓[/] {doc.source_path.name}: {len(examples)} examples")
+            console.print(f"  [green]OK[/] {doc.source_path.name}: {len(examples)} examples")
 
     if not all_examples:
         console.print("[red]No examples generated.[/]")
@@ -159,7 +156,7 @@ def generate(
 
     # 3. Export
     written = export_jsonl(all_examples, cfg.exporter)
-    console.print(f"\n[green]✓[/] Exported {len(all_examples)} examples:")
+    console.print(f"\n[green]OK[/] Exported {len(all_examples)} examples:")
     for split, path in written.items():
         console.print(f"  {split}: [bold]{path}[/]")
 

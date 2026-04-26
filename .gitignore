@@ -24,6 +24,8 @@ Thumbs.db
 
 # Project-specific
 #/data/  # Uncomment to ignore input data files
+data/processed/
+corpuscraft_config.yaml
 *.log
 .cache/
 
