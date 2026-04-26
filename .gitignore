@@ -36,5 +36,7 @@ datasets/
 *.csv
 !examples/*.jsonl  # Keep example files
 
+# Scratch / debug output
+scratch/
 
 *.pdf

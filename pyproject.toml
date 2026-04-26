@@ -93,8 +93,8 @@ Issues = "https://github.com/belgrano9/corpuscraft/issues"
 Documentation = "https://github.com/belgrano9/corpuscraft#readme"
 
 [tool.uv]
-# Use PyTorch CUDA index as additional source
 extra-index-url = ["https://download.pytorch.org/whl/cu124"]
+index-strategy = "unsafe-best-match"
 
 [build-system]
 requires = ["hatchling"]

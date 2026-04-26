@@ -22,7 +22,7 @@ class ParserConfig(BaseModel):
     vlm_model: str = "gabegoodhart/granite-docling:258M"
     vlm_host: str = "http://localhost:11434"
     image_scale: float = 2.0
-    yolo_model: str = "juliozhao/DocLayout-YOLO-DocStructBench"
+    yolo_model: str = "juliozhao/DocLayout-YOLO-DocLayNet-Docsynth300K_pretrained"
     yolo_confidence: float = 0.2
 
 
