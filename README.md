@@ -3,7 +3,7 @@
 > Transform your documents into training datasets with local-first synthetic data generation
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Non-Commercial](https://img.shields.io/badge/License-Non--Commercial-yellow.svg)](LICENSE)
 
 **CorpusCraft** is a modular pipeline that transforms document collections (PDF, DOCX, PPTX, and more) into high-quality training datasets for tasks like question-answering, retrieval, and embeddings — running entirely on your machine.
 
@@ -154,7 +154,7 @@ uv run black src/
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+CorpusCraft Non-Commercial License — see [LICENSE](LICENSE).
 
 ## Acknowledgments
 
