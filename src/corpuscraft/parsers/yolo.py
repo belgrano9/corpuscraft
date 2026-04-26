@@ -50,8 +50,17 @@ class YoloParser(BaseParser):
             ) from e
 
         self._conf = config.yolo_confidence
-        logger.info(f"Loading DocLayout-YOLO: {config.yolo_model}")
-        self._model = YOLOv10.from_pretrained(config.yolo_model)
+        model_id = config.yolo_model
+        logger.info(f"Loading DocLayout-YOLO: {model_id}")
+        # Local path: pass directly. HF repo: download the .pt weight file.
+        model_path = Path(model_id)
+        if not model_path.exists():
+            from huggingface_hub import hf_hub_download, list_repo_files
+            pt_files = [f for f in list_repo_files(model_id) if f.endswith(".pt")]
+            if not pt_files:
+                raise ValueError(f"No .pt file found in HF repo {model_id}")
+            model_path = Path(hf_hub_download(repo_id=model_id, filename=pt_files[0]))
+        self._model = YOLOv10(str(model_path))
 
     def parse_file(self, path: Path) -> ParsedDocument:
         pdf_doc = pdfium.PdfDocument(str(path))
