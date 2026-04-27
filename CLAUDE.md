@@ -9,14 +9,20 @@ CorpusCraft converts PDF documents into training datasets using local-first synt
 Always use `uv run` — never invoke `.venv/Scripts/python.exe` directly.
 
 ```bash
+uv run examples/basic/preprocess_then_parse.py
 uv run examples/advanced/parser_comparison.py
-uv run -m corpuscraft --help
 ```
+
+There is no CLI. All modules are used directly as Python APIs.
 
 ## Architecture
 
 ```
 src/corpuscraft/
+  preprocessing/
+    base.py          # BasePreprocessor ABC — run / run_folder
+    poppler.py       # PopplerPreprocessor — inspect, probe, clean, split, rasterize
+    models.py        # PreprocessedPDF + PDFMetadata dataclasses
   parsers/
     base.py          # BaseParser ABC — parse_file / parse_folder
     consensus.py     # Ensemble parser (Docling+YOLO+MinerU)
@@ -34,23 +40,48 @@ src/corpuscraft/
   exporters/
     jsonl.py         # JSONL export with train/val/test split
   models.py          # ParsedDocument dataclass
-  config.py          # Pydantic config (ParserConfig, LLMConfig, …)
-  cli.py             # Typer CLI entrypoint
+  config.py          # Pydantic config (PreprocessingConfig, ParserConfig, LLMConfig, …)
+```
+
+## Preprocessing (poppler-utils)
+
+`PopplerPreprocessor` runs before any parser. Requires poppler binaries on PATH
+(Windows builds: https://github.com/oschwartz10612/poppler-windows/releases).
+
+| Operation | Tool | What it does |
+|---|---|---|
+| inspect | `pdfinfo` | Page count, encryption, dimensions — always runs |
+| probe | `pdftotext` | Detects native text vs scanned — always runs |
+| clean | `pdftocairo` | Strips invisible text, annotations, comments (`clean=True`) |
+| split | `pdfseparate` | One PDF per page (`split=True`) |
+| rasterize | `pdftoppm` | Pages → PNG/JPEG at given DPI (`rasterize=True`) |
+
+```python
+from corpuscraft.preprocessing.poppler import PopplerPreprocessor
+
+pre = PopplerPreprocessor(clean=True, split=False, rasterize=False)
+result = pre.run(pdf_path, output_dir)
+
+result.is_scanned          # True → use ocr/vlm pipeline
+result.metadata.page_count
+result.parser_input()      # cleaned PDF path (or original if clean=False)
+result.page_images         # list of PNG paths (if rasterize=True)
+result.page_pdfs           # list of per-page PDF paths (if split=True)
 ```
 
 ## Parser selection
 
-| Pipeline | Config key | When to use |
-|---|---|---|
-| `standard` | `pipeline: standard` | Native PDFs, best quality |
-| `gpu` | `pipeline: gpu` | Same as standard but CUDA-accelerated |
-| `ocr` | `pipeline: ocr` | Scanned / image-only PDFs |
-| `vlm` | `pipeline: vlm` | Complex layouts via vision LLM |
-| `yolo` | `pipeline: yolo` | Layout-aware extraction, fastest |
-| `mineru` | `pipeline: mineru` | Multi-column, math formulas, dense OCR |
-| `consensus`| `pipeline: consensus`| High accuracy merging via bbox intersection |
-| `pymupdf`  | `pipeline: pymupdf` | Extremely fast high-quality Markdown conversion |
-| `pdfplumber`| `pipeline: pdfplumber` | Lightweight raw text and basic tables |
+| Pipeline | When to use |
+|---|---|
+| `standard` | Native PDFs, best quality |
+| `gpu` | Same as standard but CUDA-accelerated |
+| `ocr` | Scanned / image-only PDFs |
+| `vlm` | Complex layouts via vision LLM |
+| `yolo` | Layout-aware extraction, fastest |
+| `mineru` | Multi-column, math formulas, dense OCR |
+| `consensus` | High accuracy merging via bbox intersection |
+| `pymupdf` | Extremely fast high-quality Markdown conversion |
+| `pdfplumber` | Lightweight raw text and basic tables |
 
 ## YOLO parser notes
 
@@ -70,13 +101,15 @@ src/corpuscraft/
 ```
 examples/
   advanced/
-    figure_export.py        # Docling: extract page/table/figure images
-    parser_comparison.py    # Side-by-side Docling vs YOLO detection overlay
-    simple_consensus.py     # Runs multiple parsers and merges outputs
-    simple_yolo.py          # Minimal YOLO test on a single image or PDF page
+    figure_export.py          # Docling: extract page/table/figure images
+    parser_comparison.py      # Side-by-side Docling vs YOLO detection overlay
+    simple_consensus.py       # Runs multiple parsers and merges outputs
+    simple_yolo.py            # Minimal YOLO test on a single image or PDF page
   basic/
-    pdfplumber_example.py   # Native pdfplumber layout extraction
-    pymupdf_example.py      # Fast PyMuPDF4LLM markdown conversion
+    poppler_preprocess.py     # PopplerPreprocessor: all 5 operations, full report
+    preprocess_then_parse.py  # Preprocess → auto-route → parse (full chain)
+    pdfplumber_example.py     # Native pdfplumber layout extraction
+    pymupdf_example.py        # Fast PyMuPDF4LLM markdown conversion
 ```
 
 `parser_comparison.py` outputs per-page PNGs to `scratch/comparison/`. The `scratch/` directory is gitignored.

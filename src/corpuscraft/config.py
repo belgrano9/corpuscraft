@@ -19,6 +19,15 @@ class PipelineType(str, Enum):
     pdfplumber = "pdfplumber"
 
 
+class PreprocessingConfig(BaseModel):
+    clean: bool = True
+    split: bool = False
+    rasterize: bool = False
+    raster_dpi: int = 150
+    raster_format: str = "png"
+    scanned_text_threshold: int = 100
+
+
 class ParserConfig(BaseModel):
     pipeline: PipelineType = PipelineType.standard
     ocr_engine: str = "rapidocr"

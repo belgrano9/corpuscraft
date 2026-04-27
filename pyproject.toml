@@ -96,9 +96,6 @@ all = [
     "corpuscraft[transformers,vllm,cloud,quality,ui,yolo,mineru]",
 ]
 
-[project.scripts]
-corpuscraft = "corpuscraft.cli:app"
-
 [project.urls]
 Homepage = "https://github.com/belgrano9/corpuscraft"
 Repository = "https://github.com/belgrano9/corpuscraft"
