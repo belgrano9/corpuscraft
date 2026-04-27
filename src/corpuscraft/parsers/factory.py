@@ -30,6 +30,18 @@ def create_parser(config: ParserConfig) -> BaseParser:
         case PipelineType.pdfplumber:
             from corpuscraft.parsers.pdfplumber_parser import PdfPlumberParser
             return PdfPlumberParser(config)
+        case PipelineType.python_docx:
+            from corpuscraft.parsers.python_docx_parser import PythonDocxParser
+            return PythonDocxParser(config)
+        case PipelineType.python_pptx:
+            from corpuscraft.parsers.python_pptx_parser import PythonPptxParser
+            return PythonPptxParser(config)
+        case PipelineType.mammoth:
+            from corpuscraft.parsers.mammoth_parser import MammothParser
+            return MammothParser(config)
+        case PipelineType.markitdown:
+            from corpuscraft.parsers.markitdown_parser import MarkItDownParser
+            return MarkItDownParser(config)
         case _:
             from corpuscraft.parsers.standard import StandardParser
             return StandardParser(config)

@@ -34,6 +34,10 @@ src/corpuscraft/
     mineru.py        # MinerU pipeline (math, multi-column, OCR)
     pdfplumber_parser.py # Lightweight pdfplumber extraction
     pymupdf_parser.py    # PyMuPDF4LLM for fast markdown conversion
+    python_docx_parser.py # Lightweight DOCX extraction via python-docx
+    python_pptx_parser.py # Lightweight PPTX extraction via python-pptx
+    mammoth_parser.py     # DOCX → semantic markdown via mammoth
+    markitdown_parser.py  # Unified DOCX/PPTX/HTML/XLSX → markdown (Microsoft markitdown)
     standard.py      # Docling (CPU) — default pipeline
     ocr.py           # Docling + RapidOCR — for scanned PDFs
     vlm.py           # Ollama VLM backend (granite-docling)
@@ -102,7 +106,7 @@ result.alternatives  # ranked fallback pipelines
 
 **Decision tree (in gate order):**
 
-1. Non-PDF extension → lookup table (`.docx`/`.html`/`.md`/`.txt` → `standard`; images → `ocr`)
+1. Non-PDF extension → lookup table (`.docx` → `python_docx`; `.pptx` → `python_pptx`; `.html`/`.md`/`.txt` → `standard`; images → `ocr`). Office formats list `mammoth`/`markitdown`/`standard` (Docling) as alternatives — install `corpuscraft[markitdown]` for the markitdown alternative.
 2. Encrypted PDF → `standard` at 30 % confidence
 3. Scanned PDF → `ocr` for standard page sizes; `vlm` for non-standard (posters, engineering drawings)
 4. Native PDF → complexity score:
@@ -125,6 +129,10 @@ YOLO signals (Table, Formula, Picture labels) take priority over fitz heuristics
 | `consensus` | High accuracy merging via bbox intersection |
 | `pymupdf` | Extremely fast high-quality Markdown conversion |
 | `pdfplumber` | Lightweight raw text and basic tables |
+| `python_docx` | Lightweight DOCX → markdown (headings, lists, tables, headers/footers) |
+| `python_pptx` | Lightweight PPTX → markdown (per-slide sections, titles, tables, speaker notes) |
+| `mammoth` | DOCX → semantic markdown (clean output, drops formatting noise; no proper tables) |
+| `markitdown` | Unified Office → markdown (DOCX/PPTX/XLSX/HTML); proper tables, image alt-text |
 
 ## YOLO parser notes
 

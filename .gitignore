@@ -28,6 +28,7 @@ data/processed/
 corpuscraft_config.yaml
 *.log
 .cache/
+*.pptx
 
 # Outputs
 outputs/
@@ -40,3 +41,10 @@ datasets/
 scratch/
 
 *.pdf
+*.docx
+
+# claude
+**/.claude/
+**/.claude/**
+!**/.claude/agents/*.claude
+!**/.claude/core/**

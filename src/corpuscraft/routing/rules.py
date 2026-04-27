@@ -4,20 +4,20 @@ from corpuscraft.config import PipelineType
 from corpuscraft.routing.models import ContentProfile, RoutingResult
 
 # ---------------------------------------------------------------------------
-# Non-PDF extension routing table
+# Non-PDF extension routing table: extension → (primary, alternatives)
 # ---------------------------------------------------------------------------
-_NON_PDF_ROUTES: dict[str, PipelineType] = {
-    ".docx": PipelineType.standard,
-    ".pptx": PipelineType.standard,
-    ".html": PipelineType.standard,
-    ".htm":  PipelineType.standard,
-    ".md":   PipelineType.standard,
-    ".txt":  PipelineType.standard,
-    ".png":  PipelineType.ocr,
-    ".jpg":  PipelineType.ocr,
-    ".jpeg": PipelineType.ocr,
-    ".tiff": PipelineType.ocr,
-    ".bmp":  PipelineType.ocr,
+_NON_PDF_ROUTES: dict[str, tuple[PipelineType, list[PipelineType]]] = {
+    ".docx": (PipelineType.python_docx, [PipelineType.mammoth, PipelineType.markitdown, PipelineType.standard]),
+    ".pptx": (PipelineType.python_pptx, [PipelineType.markitdown, PipelineType.standard]),
+    ".html": (PipelineType.standard, [PipelineType.markitdown]),
+    ".htm":  (PipelineType.standard, [PipelineType.markitdown]),
+    ".md":   (PipelineType.standard, []),
+    ".txt":  (PipelineType.standard, []),
+    ".png":  (PipelineType.ocr, [PipelineType.vlm]),
+    ".jpg":  (PipelineType.ocr, [PipelineType.vlm]),
+    ".jpeg": (PipelineType.ocr, [PipelineType.vlm]),
+    ".tiff": (PipelineType.ocr, [PipelineType.vlm]),
+    ".bmp":  (PipelineType.ocr, [PipelineType.vlm]),
 }
 
 # ---------------------------------------------------------------------------
@@ -61,15 +61,16 @@ class RoutingRules:
 
     @staticmethod
     def _route_non_pdf(profile: ContentProfile) -> RoutingResult | None:
-        pipeline = _NON_PDF_ROUTES.get(profile.extension)
-        if pipeline is None:
+        entry = _NON_PDF_ROUTES.get(profile.extension)
+        if entry is None:
             return None
+        pipeline, alternatives = entry
         category = "Office/web document" if profile.extension in {".docx", ".pptx", ".html", ".htm", ".md", ".txt"} else "Image file"
         return RoutingResult(
             pipeline=pipeline,
             reason=f"{category} ({profile.extension}): routed to {pipeline.value}",
             confidence=0.95,
-            alternatives=[],
+            alternatives=list(alternatives),
             profile=profile,
         )
 

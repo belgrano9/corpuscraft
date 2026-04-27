@@ -19,7 +19,11 @@
       "WebFetch(domain:opendatalab.github.io)",
       "Bash(gh api *)",
       "Bash(python -c \"import inspect, mineru.backend.pipeline.pipeline_middle_json_mkcontent as m; print\\(inspect.getsource\\(m.make_blocks_to_markdown\\)\\)\")",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -v \"^.$\\\\|^..$\\\\|^...$\")",
+      "PowerShell(Get-ChildItem *)",
+      "Bash(xargs grep *)",
+      "Bash(chmod +x \"C:/Users/tomso/.claude/hooks/challenger-nudge.sh\")"
     ],
     "deny": [],
     "ask": []

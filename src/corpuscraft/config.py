@@ -17,6 +17,10 @@ class PipelineType(str, Enum):
     consensus = "consensus"
     pymupdf = "pymupdf"
     pdfplumber = "pdfplumber"
+    python_docx = "python_docx"
+    python_pptx = "python_pptx"
+    mammoth = "mammoth"
+    markitdown = "markitdown"
 
 
 class PreprocessingConfig(BaseModel):
