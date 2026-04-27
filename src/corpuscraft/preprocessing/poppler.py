@@ -30,20 +30,6 @@ class PopplerPreprocessor(BasePreprocessor):
                    annotations, comments, form fields and embedded JavaScript
       - split:     pdfseparate → one PDF per page, enables per-page parallelism
       - rasterize: pdftoppm → renders pages to PNG/JPEG at a given DPI
-
-    Example usage::
-
-        from pathlib import Path
-        from corpuscraft.preprocessing.poppler import PopplerPreprocessor
-        from corpuscraft.config import PreprocessingConfig
-
-        pre = PopplerPreprocessor(PreprocessingConfig(clean=True, rasterize=True, raster_dpi=150))
-        result = pre.run(Path("paper.pdf"), Path("outputs/preprocessed/paper"))
-
-        print(result)                    # PreprocessedPDF(...)
-        print(result.is_scanned)         # True / False
-        print(result.parser_input())     # cleaned PDF path (or original if clean=False)
-        print(result.page_images)        # [Path("outputs/.../paper-1.png"), ...]
     """
 
     def __init__(
@@ -61,6 +47,13 @@ class PopplerPreprocessor(BasePreprocessor):
         self.raster_dpi = raster_dpi
         self.raster_format = raster_format
         self.scanned_text_threshold = scanned_text_threshold
+
+        # Resolve binary paths once at construction — fail early if missing
+        self._bin_pdfinfo = _require_binary("pdfinfo")
+        self._bin_pdftotext = _require_binary("pdftotext")
+        self._bin_pdftocairo = _require_binary("pdftocairo") if clean else None
+        self._bin_pdfseparate = _require_binary("pdfseparate") if split else None
+        self._bin_pdftoppm = _require_binary("pdftoppm") if rasterize else None
 
     def run(self, pdf_path: Path, output_dir: Path) -> PreprocessedPDF:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -87,9 +80,8 @@ class PopplerPreprocessor(BasePreprocessor):
     # ------------------------------------------------------------------
 
     def _inspect(self, pdf_path: Path) -> PDFMetadata:
-        _require_binary("pdfinfo")
         result = subprocess.run(
-            ["pdfinfo", str(pdf_path)],
+            [self._bin_pdfinfo, str(pdf_path)],
             capture_output=True,
             text=True,
             check=True,
@@ -111,48 +103,42 @@ class PopplerPreprocessor(BasePreprocessor):
         )
 
     def _probe_text(self, pdf_path: Path) -> bool:
-        """Returns True when the PDF has no meaningful native text (i.e. is scanned)."""
-        _require_binary("pdftotext")
+        # Only sample the first 3 pages — sufficient to detect a native text layer
+        # without extracting the full document for large PDFs
         result = subprocess.run(
-            ["pdftotext", "-q", str(pdf_path), "-"],
+            [self._bin_pdftotext, "-q", "-f", "1", "-l", "3", str(pdf_path), "-"],
             capture_output=True,
             text=True,
         )
         return len(result.stdout.strip()) < self.scanned_text_threshold
 
     def _clean(self, pdf_path: Path, output_dir: Path) -> Path:
-        """Re-render via pdftocairo to strip invisible text, annotations and comments."""
-        _require_binary("pdftocairo")
         out = output_dir / f"{pdf_path.stem}_clean.pdf"
         subprocess.run(
-            ["pdftocairo", "-pdf", str(pdf_path), str(out)],
+            [self._bin_pdftocairo, "-pdf", str(pdf_path), str(out)],
             capture_output=True,
             check=True,
         )
         return out
 
     def _split(self, pdf_path: Path, output_dir: Path) -> list[Path]:
-        """Split PDF into one file per page using pdfseparate."""
-        _require_binary("pdfseparate")
         pages_dir = output_dir / "pages"
         pages_dir.mkdir(exist_ok=True)
         prefix = str(pages_dir / f"{pdf_path.stem}_%d.pdf")
         subprocess.run(
-            ["pdfseparate", str(pdf_path), prefix],
+            [self._bin_pdfseparate, str(pdf_path), prefix],
             capture_output=True,
             check=True,
         )
         return sorted(pages_dir.glob(f"{pdf_path.stem}_*.pdf"))
 
     def _rasterize(self, pdf_path: Path, output_dir: Path) -> list[Path]:
-        """Render pages to images using pdftoppm."""
-        _require_binary("pdftoppm")
         images_dir = output_dir / "images"
         images_dir.mkdir(exist_ok=True)
         prefix = str(images_dir / pdf_path.stem)
         subprocess.run(
             [
-                "pdftoppm",
+                self._bin_pdftoppm,
                 f"-{self.raster_format}",
                 "-r", str(self.raster_dpi),
                 str(pdf_path),

@@ -3,6 +3,7 @@ from pathlib import Path
 from corpuscraft.config import ParserConfig, PipelineType
 from corpuscraft.parsers.factory import create_parser
 from corpuscraft.preprocessing.poppler import PopplerPreprocessor
+from corpuscraft.routing import PipelineRouter
 
 
 def main() -> None:
@@ -15,9 +16,15 @@ def main() -> None:
     print(f"Preprocessed : {preprocessed}")
     print(f"Scanned      : {preprocessed.is_scanned}")
 
-    # Step 2 — route to the right parser based on scanned detection
-    pipeline = PipelineType.ocr if preprocessed.is_scanned else PipelineType.pymupdf
-    print(f"Pipeline     : {pipeline.value}")
+    # Step 2 — auto-route: inspects content and picks the best pipeline
+    router = PipelineRouter(detection_level="basic")
+    result = router.route(preprocessed)
+    print(f"Pipeline     : {result.pipeline.value}")
+    print(f"Reason       : {result.reason}")
+    print(f"Confidence   : {result.confidence:.0%}")
+    if result.alternatives:
+        print(f"Alternatives : {', '.join(p.value for p in result.alternatives)}")
+    pipeline = result.pipeline
 
     parser = create_parser(ParserConfig(pipeline=pipeline))
 

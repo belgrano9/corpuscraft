@@ -23,6 +23,11 @@ src/corpuscraft/
     base.py          # BasePreprocessor ABC — run / run_folder
     poppler.py       # PopplerPreprocessor — inspect, probe, clean, split, rasterize
     models.py        # PreprocessedPDF + PDFMetadata dataclasses
+  routing/
+    models.py        # ContentProfile (3-tier) + RoutingResult dataclasses
+    rules.py         # RoutingRules — pure decision tree, no I/O, unit-testable
+    detector.py      # ContentDetector — fitz/YOLO content inspection
+    router.py        # PipelineRouter — facade: detect → route
   parsers/
     base.py          # BaseParser ABC — parse_file / parse_folder
     consensus.py     # Ensemble parser (Docling+YOLO+MinerU)
@@ -68,6 +73,44 @@ result.parser_input()      # cleaned PDF path (or original if clean=False)
 result.page_images         # list of PNG paths (if rasterize=True)
 result.page_pdfs           # list of per-page PDF paths (if split=True)
 ```
+
+## Routing (automatic pipeline selection)
+
+`PipelineRouter` sits between preprocessing and parsing. It inspects document content and returns the best `PipelineType` with a reason and confidence score.
+
+```python
+from corpuscraft.routing import PipelineRouter
+
+router = PipelineRouter(detection_level="basic")  # "none" | "basic" | "enhanced"
+result = router.route(preprocessed)   # PreprocessedPDF from PopplerPreprocessor
+# or, from a bare path:
+result = router.route_path(Path("paper.pdf"))
+
+result.pipeline      # PipelineType to use
+result.reason        # human-readable explanation
+result.confidence    # 0.0 – 1.0
+result.alternatives  # ranked fallback pipelines
+```
+
+**Detection levels:**
+
+| Level | What runs | Cost |
+|---|---|---|
+| `none` | Only uses PreprocessedPDF metadata (is_scanned, page_count, extension) | zero I/O |
+| `basic` | Opens PDF with fitz — detects tables, image ratio, multi-column layout, text density, formula heuristics | fast |
+| `enhanced` | basic + YOLO on rasterized pages (requires `[yolo]` extra) | slower, more accurate |
+
+**Decision tree (in gate order):**
+
+1. Non-PDF extension → lookup table (`.docx`/`.html`/`.md`/`.txt` → `standard`; images → `ocr`)
+2. Encrypted PDF → `standard` at 30 % confidence
+3. Scanned PDF → `ocr` for standard page sizes; `vlm` for non-standard (posters, engineering drawings)
+4. Native PDF → complexity score:
+   - formulas = +2, tables / multi-column / figure-heavy / low-text-density = +1 each
+   - score 0 → `pymupdf` | score 1 → specialist (`pdfplumber`/`yolo`/`mineru`) | score 2–3 → `mineru` | score ≥ 4 → `consensus`
+
+YOLO signals (Table, Formula, Picture labels) take priority over fitz heuristics when available.
+`RoutingResult.alternatives` lists fallbacks for when the primary pipeline's extra is not installed.
 
 ## Parser selection
 
