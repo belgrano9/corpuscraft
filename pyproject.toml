@@ -90,6 +90,13 @@ markitdown = [
     "markitdown[docx,pptx]>=0.1.5",
 ]
 
+# PDF -> HTML/CSS reconstruction pipeline (corpuscraft.pdf2code): render + diff stages
+pdf2code = [
+    "weasyprint>=62.0",
+    "numpy>=1.26.0",
+    "pillow>=10.0.0",
+]
+
 # Development tools
 dev = [
     "pytest>=7.4.0",
@@ -101,7 +108,7 @@ dev = [
 
 # All optional dependencies
 all = [
-    "corpuscraft[transformers,vllm,cloud,quality,ui,yolo,mineru,markitdown]",
+    "corpuscraft[transformers,vllm,cloud,quality,ui,yolo,mineru,markitdown,pdf2code]",
 ]
 
 [project.urls]
