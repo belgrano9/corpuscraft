@@ -8,22 +8,33 @@ from corpuscraft.pdf2code import render as render_stage
 from corpuscraft.pdf2code.emit import emit_passthrough
 from corpuscraft.pdf2code.layout import build_layout_tree
 from corpuscraft.pdf2code.models import DiffResult
-from corpuscraft.pdf2code.serde import dump_diff_result, dump_document_extraction, dump_json, dump_layout_tree
+from corpuscraft.pdf2code.serde import (
+    dump_diff_result,
+    dump_document_extraction,
+    dump_json,
+    dump_layout_tree,
+    dump_stylesheet,
+)
+from corpuscraft.pdf2code.styles import build_stylesheet
 
 
 def run_skeleton(pdf_path: Path, out_dir: Path, *, dpi: int = 150) -> list[DiffResult]:
-    """Extract -> passthrough emit -> render -> diff, dumping every stage's JSON to out_dir.
+    """Extract -> stylesheet -> passthrough emit -> render -> diff, dumping
+    every stage's JSON to out_dir.
 
-    styles.py doesn't exist yet, so this still uses the trivial passthrough
-    emitter (ignoring the real layout tree's structure/style_class) — only
-    diff.py's per-node path benefits from build_layout_tree for now.
+    The passthrough emitter still just absolutely-positions one element per
+    primitive (no flow layout, no layout-tree structure) -- only its font
+    handling is real, via styles.py's font resolution/embedding.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
     document = extract_stage.extract_document(pdf_path, out_dir / "extracted_images")
     dump_document_extraction(document, out_dir / "extraction.json")
 
-    html, css = emit_passthrough(document)
+    stylesheet = build_stylesheet(document, out_dir / "fonts")
+    dump_stylesheet(stylesheet, out_dir / "stylesheet.json")
+
+    html, css = emit_passthrough(document, stylesheet)
     (out_dir / "emitted.html").write_text(html)
     (out_dir / "emitted.css").write_text(css)
 

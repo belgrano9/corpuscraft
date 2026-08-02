@@ -143,3 +143,29 @@ class RenderResult:
     pdf_path: Path
     page_images: list[Path]
     dpi: int
+
+
+@dataclass(kw_only=True)
+class FontFace:
+    css_family: str
+    font_path: Path | None
+    font_format: str | None
+    weight: int
+    italic: bool
+
+
+@dataclass(kw_only=True)
+class StyleClass:
+    name: str
+    font_family: str
+    font_size: float
+    font_weight: int
+    italic: bool
+    color: str
+
+
+@dataclass(kw_only=True)
+class StyleSheet:
+    classes: list[StyleClass] = field(default_factory=list)
+    font_faces: list[FontFace] = field(default_factory=list)
+    assignments: dict[str, str] = field(default_factory=dict)

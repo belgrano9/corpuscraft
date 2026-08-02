@@ -9,6 +9,7 @@ from corpuscraft.pdf2code.models import (
     BBox,
     DiffResult,
     DocumentExtraction,
+    FontFace,
     ImagePrimitive,
     LayoutNode,
     LayoutTree,
@@ -16,6 +17,8 @@ from corpuscraft.pdf2code.models import (
     PageExtraction,
     PathSegment,
     Primitive,
+    StyleClass,
+    StyleSheet,
     TextSpan,
     VectorDrawing,
 )
@@ -133,4 +136,36 @@ def load_diff_result(path: Path) -> DiffResult:
             for n in data["node_diffs"]
         ],
         visualization_path=Path(data["visualization_path"]) if data.get("visualization_path") else None,
+    )
+
+
+def dump_stylesheet(stylesheet: StyleSheet, path: Path) -> None:
+    dump_json(stylesheet, path)
+
+
+def load_stylesheet(path: Path) -> StyleSheet:
+    data = json.loads(path.read_text())
+    return StyleSheet(
+        classes=[
+            StyleClass(
+                name=c["name"],
+                font_family=c["font_family"],
+                font_size=c["font_size"],
+                font_weight=c["font_weight"],
+                italic=c["italic"],
+                color=c["color"],
+            )
+            for c in data["classes"]
+        ],
+        font_faces=[
+            FontFace(
+                css_family=f["css_family"],
+                font_path=Path(f["font_path"]) if f.get("font_path") else None,
+                font_format=f.get("font_format"),
+                weight=f["weight"],
+                italic=f["italic"],
+            )
+            for f in data["font_faces"]
+        ],
+        assignments=dict(data["assignments"]),
     )

@@ -6,20 +6,26 @@ from corpuscraft.pdf2code.models import (
     BBox,
     DocumentExtraction,
     ImagePrimitive,
+    StyleSheet,
     TextSpan,
     VectorDrawing,
 )
+from corpuscraft.pdf2code.styles import render_stylesheet_css
 
 
-def emit_passthrough(document: DocumentExtraction) -> tuple[str, str]:
+def emit_passthrough(document: DocumentExtraction, stylesheet: StyleSheet | None = None) -> tuple[str, str]:
     """Stage-4 stand-in: one absolutely-positioned element per primitive.
 
-    Ignores styles.py/layout.py (not built yet) so extract -> render -> diff
-    can run end to end. Drawings/images are stacked behind text (a fixed
-    heuristic, not the original z-order) since backgrounds-behind-text is
-    the common case and get_drawings() sequence numbers aren't comparable
+    Ignores layout.py's structure (not consumed yet) so extract -> render ->
+    diff can run end to end. Drawings/images are stacked behind text (a
+    fixed heuristic, not the original z-order) since backgrounds-behind-text
+    is the common case and get_drawings() sequence numbers aren't comparable
     to text draw order. The real emit.py replaces this with a grammar
     -constrained DOM built from the layout tree and style classes.
+
+    stylesheet is optional: when given, text spans reference styles.py's
+    generated CSS classes (real font resolution/embedding) instead of
+    quoting the raw PDF font name directly.
     """
     html = Element("html")
     body = SubElement(html, "body", {"style": "margin:0;padding:0;"})
@@ -32,16 +38,21 @@ def emit_passthrough(document: DocumentExtraction) -> tuple[str, str]:
             page_style += "page-break-after:always;"
         page_div = SubElement(body, "div", {"class": "pdf-page", "style": page_style})
 
-        drawings = [p for p in page.primitives if isinstance(p, VectorDrawing)]
-        images = [p for p in page.primitives if isinstance(p, ImagePrimitive)]
-        texts = [p for p in page.primitives if isinstance(p, TextSpan)]
+        drawings, images, texts = [], [], []
+        for index, primitive in enumerate(page.primitives):
+            if isinstance(primitive, VectorDrawing):
+                drawings.append((index, primitive))
+            elif isinstance(primitive, ImagePrimitive):
+                images.append((index, primitive))
+            elif isinstance(primitive, TextSpan):
+                texts.append((index, primitive))
 
-        for index, drawing in enumerate(drawings):
+        for index, drawing in drawings:
             _emit_drawing(page_div, drawing, index)
-        for index, image in enumerate(images):
+        for index, image in images:
             _emit_image(page_div, image, index)
-        for index, span in enumerate(texts):
-            _emit_text(page_div, span, index)
+        for index, span in texts:
+            _emit_text(page_div, span, index, stylesheet, page_num)
 
     first_page = document.pages[0] if document.pages else None
     page_size_rule = (
@@ -50,6 +61,8 @@ def emit_passthrough(document: DocumentExtraction) -> tuple[str, str]:
         else "@page { margin: 0; }"
     )
     css = page_size_rule + "\nbody { margin: 0; }"
+    if stylesheet is not None:
+        css += "\n" + render_stylesheet_css(stylesheet)
     html_str = "<!doctype html>\n" + tostring(html, encoding="unicode")
     return html_str, css
 
@@ -66,15 +79,23 @@ def _css_font_family(name: str) -> str:
     return f'"{escaped}", sans-serif'
 
 
-def _emit_text(parent: Element, span: TextSpan, index: int) -> None:
-    style = _abs_style(
-        span.bbox,
-        f"margin:0;white-space:pre;font-size:{span.font_size:.2f}pt;"
-        f"font-weight:{span.font_weight};font-style:{'italic' if span.italic else 'normal'};"
-        f"color:{span.color};font-family:{_css_font_family(span.font_family)};"
-        f"line-height:{span.bbox.height:.2f}pt;",
-    )
-    div = SubElement(parent, "div", {"class": "primitive text", "data-index": str(index), "style": style})
+def _emit_text(
+    parent: Element, span: TextSpan, index: int, stylesheet: StyleSheet | None, page_index: int
+) -> None:
+    class_name = stylesheet.assignments.get(f"{page_index}:{index}") if stylesheet is not None else None
+    if class_name is not None:
+        css_class = f"primitive text {class_name}"
+        style = _abs_style(span.bbox, f"margin:0;white-space:pre;line-height:{span.bbox.height:.2f}pt;")
+    else:
+        css_class = "primitive text"
+        style = _abs_style(
+            span.bbox,
+            f"margin:0;white-space:pre;font-size:{span.font_size:.2f}pt;"
+            f"font-weight:{span.font_weight};font-style:{'italic' if span.italic else 'normal'};"
+            f"color:{span.color};font-family:{_css_font_family(span.font_family)};"
+            f"line-height:{span.bbox.height:.2f}pt;",
+        )
+    div = SubElement(parent, "div", {"class": css_class, "data-index": str(index), "style": style})
     div.text = span.text
 
 
