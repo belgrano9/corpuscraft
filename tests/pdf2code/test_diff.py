@@ -7,8 +7,8 @@ import numpy as np
 from corpuscraft.pdf2code.diff import _crop, diff_page
 from corpuscraft.pdf2code.emit import emit_passthrough
 from corpuscraft.pdf2code.extract import extract_document
+from corpuscraft.pdf2code.layout import build_layout_tree
 from corpuscraft.pdf2code.models import BBox
-from corpuscraft.pdf2code.pipeline import _flat_layout_tree
 from corpuscraft.pdf2code.render import rasterize_pdf, render_html
 
 
@@ -19,7 +19,7 @@ def test_diff_page_produces_ranked_node_diffs(sample_pdf: Path, tmp_path: Path) 
     original_images = rasterize_pdf(sample_pdf, tmp_path / "original", dpi=100)
 
     page = document.pages[0]
-    tree = _flat_layout_tree(page)
+    tree = build_layout_tree(page, sample_pdf)
 
     result = diff_page(
         original_image=original_images[0],

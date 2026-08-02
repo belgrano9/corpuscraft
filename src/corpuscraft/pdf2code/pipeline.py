@@ -6,16 +6,17 @@ from corpuscraft.pdf2code import diff as diff_stage
 from corpuscraft.pdf2code import extract as extract_stage
 from corpuscraft.pdf2code import render as render_stage
 from corpuscraft.pdf2code.emit import emit_passthrough
-from corpuscraft.pdf2code.models import BBox, DiffResult, LayoutNode, LayoutTree, PageExtraction
+from corpuscraft.pdf2code.layout import build_layout_tree
+from corpuscraft.pdf2code.models import DiffResult
 from corpuscraft.pdf2code.serde import dump_diff_result, dump_document_extraction, dump_json, dump_layout_tree
 
 
 def run_skeleton(pdf_path: Path, out_dir: Path, *, dpi: int = 150) -> list[DiffResult]:
     """Extract -> passthrough emit -> render -> diff, dumping every stage's JSON to out_dir.
 
-    styles.py/layout.py don't exist yet, so this builds a flat pseudo layout
-    tree (one leaf per primitive, no grouping) purely to give diff.py's
-    per-node path something to walk. Stage 3 replaces _flat_layout_tree.
+    styles.py doesn't exist yet, so this still uses the trivial passthrough
+    emitter (ignoring the real layout tree's structure/style_class) — only
+    diff.py's per-node path benefits from build_layout_tree for now.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -33,7 +34,7 @@ def run_skeleton(pdf_path: Path, out_dir: Path, *, dpi: int = 150) -> list[DiffR
 
     results: list[DiffResult] = []
     for page in document.pages:
-        tree = _flat_layout_tree(page)
+        tree = build_layout_tree(page, pdf_path)
         dump_layout_tree(tree, out_dir / f"layout_page{page.page_index}.json")
 
         result = diff_stage.diff_page(
@@ -47,22 +48,3 @@ def run_skeleton(pdf_path: Path, out_dir: Path, *, dpi: int = 150) -> list[DiffR
         results.append(result)
 
     return results
-
-
-def _flat_layout_tree(page: PageExtraction) -> LayoutTree:
-    root = LayoutNode(
-        id=f"page{page.page_index}",
-        kind="page",
-        bbox=BBox(0, 0, page.width, page.height),
-    )
-    for index, primitive in enumerate(page.primitives):
-        kind = "line" if primitive.kind == "text" else primitive.kind
-        root.children.append(
-            LayoutNode(
-                id=f"page{page.page_index}/prim{index}",
-                kind=kind,
-                bbox=primitive.bbox,
-                primitive_refs=[index],
-            )
-        )
-    return LayoutTree(page_index=page.page_index, root=root)

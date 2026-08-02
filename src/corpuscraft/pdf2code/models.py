@@ -109,7 +109,7 @@ class DocumentExtraction:
 @dataclass(kw_only=True)
 class LayoutNode:
     id: str
-    kind: Literal["page", "column", "block", "line", "image", "drawing"]
+    kind: Literal["page", "column", "block", "line", "image", "drawing", "table", "row", "cell"]
     bbox: BBox
     children: list[LayoutNode] = field(default_factory=list)
     primitive_refs: list[int] = field(default_factory=list)

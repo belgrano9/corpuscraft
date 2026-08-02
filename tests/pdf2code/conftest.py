@@ -28,3 +28,33 @@ def sample_pdf(tmp_path: Path) -> Path:
     doc.save(pdf_path)
     doc.close()
     return pdf_path
+
+
+@pytest.fixture
+def layout_sample_pdf(tmp_path: Path) -> Path:
+    """A synthetic PDF with a clear paragraph gap and a bordered 2x2 table.
+
+    Exercises layout.py's whitespace XY-cut (the gap between the two
+    paragraphs) and its find_tables() pre-pass (the bordered grid).
+    """
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=300)
+
+    page.insert_text((20, 30), "Title heading", fontsize=12, fontname="hebo")
+    page.insert_text((20, 60), "First paragraph line one.", fontsize=9, fontname="helv")
+    page.insert_text((20, 72), "First paragraph line two.", fontsize=9, fontname="helv")
+    # a wide gap before the next block, well above min_row_gap_pt's default
+    page.insert_text((20, 150), "Second paragraph after a gap.", fontsize=9, fontname="helv")
+
+    page.draw_rect(fitz.Rect(20, 200, 220, 240), color=(0, 0, 0), width=1)
+    page.draw_line(fitz.Point(20, 220), fitz.Point(220, 220), color=(0, 0, 0), width=1)
+    page.draw_line(fitz.Point(120, 200), fitz.Point(120, 240), color=(0, 0, 0), width=1)
+    page.insert_text((25, 215), "A1", fontsize=8)
+    page.insert_text((125, 215), "B1", fontsize=8)
+    page.insert_text((25, 235), "A2", fontsize=8)
+    page.insert_text((125, 235), "B2", fontsize=8)
+
+    pdf_path = tmp_path / "layout_sample.pdf"
+    doc.save(pdf_path)
+    doc.close()
+    return pdf_path
