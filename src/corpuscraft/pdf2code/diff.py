@@ -80,8 +80,11 @@ def _crop(arr: np.ndarray, bbox: BBox, dpi: int) -> np.ndarray:
     scale = dpi / 72
     x0, y0, x1, y1 = bbox.scaled(scale).as_tuple()
     height, width = arr.shape
-    xi0, yi0 = max(0, int(x0)), max(0, int(y0))
-    xi1, yi1 = min(width, int(round(x1))), min(height, int(round(y1)))
+    # round() consistently on both corners: a truly zero-width/height bbox
+    # (common for dashed/dotted rule segments) must round to the same pixel
+    # on both ends, or it fabricates a spurious 1px sliver out of nothing.
+    xi0, yi0 = max(0, round(x0)), max(0, round(y0))
+    xi1, yi1 = min(width, round(x1)), min(height, round(y1))
     if xi1 <= xi0 or yi1 <= yi0:
         return arr[0:0, 0:0]
     return arr[yi0:yi1, xi0:xi1]

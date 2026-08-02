@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from corpuscraft.pdf2code.diff import diff_page
+import numpy as np
+
+from corpuscraft.pdf2code.diff import _crop, diff_page
 from corpuscraft.pdf2code.emit import emit_passthrough
 from corpuscraft.pdf2code.extract import extract_document
+from corpuscraft.pdf2code.models import BBox
 from corpuscraft.pdf2code.pipeline import _flat_layout_tree
 from corpuscraft.pdf2code.render import rasterize_pdf, render_html
 
@@ -34,3 +37,13 @@ def test_diff_page_produces_ranked_node_diffs(sample_pdf: Path, tmp_path: Path) 
 
     scores = [n.score for n in result.node_diffs]
     assert scores == sorted(scores)  # worst (least similar) first
+
+
+def test_crop_zero_height_bbox_is_empty() -> None:
+    # Regression: a dashed/dotted rule segment can have y0 == y1 exactly.
+    # floor(y0*scale) and round(y1*scale) can land on different pixel rows
+    # (e.g. 587.0pt @ 150dpi -> 1223.958 -> floor=1223, round=1224),
+    # fabricating a spurious 1px-tall crop out of zero actual area.
+    arr = np.zeros((1754, 1240))
+    bbox = BBox(x0=359.83, y0=587.0, x1=360.40, y1=587.0)
+    assert _crop(arr, bbox, dpi=150).size == 0
