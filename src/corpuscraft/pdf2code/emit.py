@@ -126,11 +126,26 @@ def _emit_drawing(parent: Element, drawing: VectorDrawing, index: int) -> None:
                 },
             )
         elif segment.op == "qu" and len(pts) >= 3:
-            points_attr = " ".join(f"{x:.2f},{y:.2f}" for x, y in pts)
+            # Quad point order isn't a reliable perimeter walk across PDF
+            # generators (seen in practice as UL,LL,UR,LR rather than a
+            # walkable UL,UR,LR,LL) -- connecting them in raw order as a
+            # <polygon> draws a bowtie instead of a rectangle. Nearly all
+            # real-world "qu" usage (table cells/borders) is axis-aligned
+            # anyway, so use the bounding box instead of trusting order.
+            xs = [x for x, _ in pts]
+            ys = [y for _, y in pts]
             SubElement(
                 svg,
-                "polygon",
-                {"points": points_attr, "stroke": stroke, "fill": fill, "stroke-width": width},
+                "rect",
+                {
+                    "x": f"{min(xs):.2f}",
+                    "y": f"{min(ys):.2f}",
+                    "width": f"{max(xs) - min(xs):.2f}",
+                    "height": f"{max(ys) - min(ys):.2f}",
+                    "stroke": stroke,
+                    "fill": fill,
+                    "stroke-width": width,
+                },
             )
         elif segment.op == "l" and len(pts) == 2:
             (x0, y0), (x1, y1) = pts
