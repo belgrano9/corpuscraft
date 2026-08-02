@@ -109,15 +109,21 @@ def _resolve_font(
     italic = "italic" in raw_family.lower() or "oblique" in raw_family.lower()
 
     target = _normalize(raw_family)
-    # substring match in either direction (PyMuPDF's basefont often carries
-    # a style suffix -- "DejaVu Sans Book" -- that the span's font name
-    # doesn't); prefer the most specific (longest normalized) candidate.
-    candidates = sorted(
-        (item for item in font_resources if target in item[0] or item[0] in target),
+    # Exact matches always come first: a plain "Verdana" query must never
+    # lose to a longer "VerdanaBold" substring match just because it's
+    # longer -- that previously collapsed regular and bold onto the same
+    # extracted file. Only fall back to substring matching (PyMuPDF's
+    # basefont often carries a style suffix -- "DejaVu Sans Book" -- that
+    # the span's font name doesn't have) when no exact match exists,
+    # preferring the most specific (longest normalized) candidate there.
+    exact = [xref for norm, xref in font_resources if norm == target]
+    partial = sorted(
+        (item for item in font_resources if item[0] != target and (target in item[0] or item[0] in target)),
         key=lambda item: -len(item[0]),
     )
+    candidates = exact + [xref for _, xref in partial]
 
-    for _, xref in candidates:
+    for xref in candidates:
         _basename, ext, _ftype, buffer = doc.extract_font(xref)
         if buffer:
             font_path = font_dir / f"font{xref}.{ext}"

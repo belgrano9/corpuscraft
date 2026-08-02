@@ -7,7 +7,7 @@ import pytest
 
 from corpuscraft.pdf2code.extract import extract_document
 from corpuscraft.pdf2code.serde import dump_stylesheet, load_stylesheet
-from corpuscraft.pdf2code.styles import build_stylesheet, render_stylesheet_css
+from corpuscraft.pdf2code.styles import _resolve_font, build_stylesheet, render_stylesheet_css
 
 _DEJAVU_PATH = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
 
@@ -75,6 +75,30 @@ def test_render_stylesheet_css_produces_font_face_and_class_rules(
     for face in stylesheet.font_faces:
         assert "@font-face" in css
         assert face.font_path.resolve().as_uri() in css
+
+
+class _StubDoc:
+    """Fakes fitz.Document.extract_font() with fixed per-xref byte buffers."""
+
+    def __init__(self, buffers: dict[int, bytes]) -> None:
+        self._buffers = buffers
+
+    def extract_font(self, xref: int) -> tuple[str, str, str, bytes]:
+        return ("stub", "ttf", "TrueType", self._buffers.get(xref, b""))
+
+
+def test_resolve_font_prefers_exact_match_over_longer_substring(tmp_path: Path) -> None:
+    # Regression: "Verdana" and "Verdana-Bold" both normalize such that
+    # "verdana" is a substring of "verdanabold". The old length-sorted
+    # heuristic picked the longer (but wrong) candidate even when an exact
+    # match existed, collapsing regular and bold onto the same font file.
+    font_resources = [("verdana", 1), ("verdanabold", 2)]
+    doc = _StubDoc({1: b"regular-bytes", 2: b"bold-bytes"})
+
+    face = _resolve_font("Verdana", font_resources, doc, tmp_path)
+
+    assert face.font_path is not None
+    assert face.font_path.read_bytes() == b"regular-bytes"
 
 
 def test_stylesheet_json_roundtrip(sample_pdf: Path, tmp_path: Path) -> None:
